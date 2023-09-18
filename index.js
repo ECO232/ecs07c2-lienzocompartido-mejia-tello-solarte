@@ -1,17 +1,29 @@
-import express from 'express';
-import { Server } from 'socket.io';
+const express = require('express');
+const http = require('http');
+const socketIO = require('socket.io');
 
-const expressApp = express();
-expressApp.use(express.json())
+const app = express();
+const server = http.createServer(app);
+const io = socketIO(server);
 
-expressApp.use('/app', express.static('public'));
-const httpServer = expressApp.listen(5050, () => {
-console.log(`http://localhost:5050/app`);
-})
+app.use(express.static(__dirname + '/public'));
 
-const io = new Server(httpServer, { path: '/real-time' });
 io.on('connection', (socket) => {
-socket.on('positions', (message) => {
-socket.broadcast.emit('display-positions', message);
-})
+    console.log('Client Connected!')
+
+    socket.on('disconnect', () => {
+        console.log('Client Disconected :(')
+    });
+
+    socket.on('send-element', (elem) => {
+        io.emit('received-element', elem)
+    });
+
+    socket.on('send-cursor', (elem) => {
+        io.emit('received-cursor', elem)
+    });
 });
+
+server.listen(3000, () => {
+    console.log('Server listening on port 3000')
+})
